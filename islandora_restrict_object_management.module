@@ -1,0 +1,48 @@
+<?php
+
+function islandora_restrict_object_management_islandora_object_access($op, $object, $user){
+  return get_answer($user, $object);
+}
+
+function islandora_restrict_object_management_islandora_datastream_access($op, $object, $user){
+  return get_answer($user, $object);
+}
+
+function get_answer($user, $object){
+  if(!url_is_management()){
+    return NULL;
+  }else{
+    return check_access($user, $object);
+  }
+}
+
+function check_access($user, $object){
+    $whitelist   = get_user_whitelist($user);
+    $pid         = $object->id;
+    $namespace   = explode(':', $pid)[0];
+    $institution = explode('-', $namespace)[0];
+    return in_array($institution, $whitelist);
+}
+
+function get_user_whitelist($user){
+   $account     = user_load($user->uid);
+   $field_name  = 'field_institution_code';
+   $field_items = field_get_items('user', $account, $field_name);
+
+   if(!$field_items){
+      return array();
+   }
+   $namespaces = array();
+   foreach($field_items as $item){
+      $namespaces[] = $item['safe_value'];
+   }
+   return $namespaces;
+}
+
+function url_is_management(){
+   $url_segments = explode('/', request_path());
+   if(in_array('manage', $url_segments)){
+      return true;
+   }
+   return false;
+}

@@ -1,0 +1,5 @@
+name = Islandora Restrict Object Management
+description = Restricts access to Islandora object management pages based on a user field.
+core = 7.x
+package = Islandora Utilities
+dependencies[] = islandora
