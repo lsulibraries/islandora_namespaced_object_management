@@ -1,48 +1,135 @@
 <?php
+/**
+ * @file
+ * main module files
+ */
 
-function islandora_restrict_object_management_islandora_object_access($op, $object, $user){
-  return get_answer($user, $object);
+define('ISLANDORA_RESTRICT_OBJECT_MANAGEMENT_FIELD_NAME', 'field_institution');
+
+// Permissions.
+define('ISLANDORA_RESTRICT_OBJECT_MANAGEMENT_EXEMPT', 'object management restriction exempt');
+
+/**
+ * Implements hook_permission().
+ */
+function islandora_restrict_object_management_permission() {
+  return array(
+    ISLANDORA_RESTRICT_OBJECT_MANAGEMENT_EXEMPT => array(
+      'title' => t('object management restriction exempt'),
+      'description' => t("Exemption from islandora object management restrictions."),
+    ),
+  );
 }
 
-function islandora_restrict_object_management_islandora_datastream_access($op, $object, $user){
-  return get_answer($user, $object->parent);
+/**
+ * Implements hook_form_alter().
+ */
+//function islandora_restrict_object_management_user_login(&$edit, $account) {
+//  $list  = get_user_whitelist($account->uid);
+//  if(!empty($list)){
+//    drupal_goto('/' . $list[0]);
+//  }
+//}
+
+function islandora_restrict_object_management_user_login_submit($form, &$form_state) {
+  $list = get_user_whitelist($form_state['uid']);
+  if(empty($list) && !is_array($list)){
+    return;
+  }
+
+  $_GET['destination'] = $list[0];
+  drupal_goto($list[0]);
 }
 
-function get_answer($user, $object){
-  if(!url_is_management()){
+function islandora_restrict_object_management_form_user_login_block_alter(&$form, &$form_state, $form_id) {
+  $form['#submit'][] = 'islandora_restrict_object_management_user_login_submit';
+}
+
+
+/**
+ * Implements hook_islandora_object_access
+ * 
+ * @param type $op
+ * @param type $object
+ * @param type $user
+ * @return TRUE|FALSE|NULL
+ */
+function islandora_restrict_object_management_islandora_object_access($op, $object, $user) {
+  return decide_access($user, $object);
+}
+
+/**
+ * Implements hook_islandora_datastream_access
+ *
+ * @param type $op
+ * @param type $object
+ * @param type $user
+ * @return TRUE|FALSE|NULL
+ */
+function islandora_restrict_object_management_islandora_datastream_access($op, $object, $user) {
+  return decide_access($user, $object->parent);
+}
+
+/**
+ * 
+ * @param type $user
+ * @param type $object
+ * @return TRUE|FALSE|NULL
+ */
+function decide_access($user, $object) {
+  if (!url_is_protected()) {
     return NULL;
-  }else{
-    return check_access($user, $object);
+  }
+  elseif (user_access(ISLANDORA_RESTRICT_OBJECT_MANAGEMENT_EXEMPT)) {
+    return TRUE;
+  }
+  else {
+    return check_user_access_for_object($user, $object);
   }
 }
 
-function check_access($user, $object){
-    $whitelist   = get_user_whitelist($user);
-    $pid         = $object->id;
-    $namespace   = explode(':', $pid)[0];
-    $institution = explode('-', $namespace)[0];
-    return in_array($institution, $whitelist);
+/**
+ * 
+ * @param type $user
+ * @param type $object
+ * @return TRUE|FALSE
+ */
+function check_user_access_for_object($user, $object) {
+  $whitelist   = get_user_whitelist($user->uid);
+  $pid         = $object->id;
+  $namespace   = explode(':', $pid)[0];
+  $institution = explode('-', $namespace)[0];
+  return in_array($institution, $whitelist);
 }
 
-function get_user_whitelist($user){
-   $account     = user_load($user->uid);
-   $field_name  = 'field_institution_code';
-   $field_items = field_get_items('user', $account, $field_name);
+/**
+ * 
+ * @param type $user
+ * @return array
+ */
+function get_user_whitelist($uid) {
+  $account     = user_load($uid);
+  $field_name  = ISLANDORA_RESTRICT_OBJECT_MANAGEMENT_FIELD_NAME;
+  $field_items = field_get_items('user', $account, $field_name);
 
-   if(!$field_items){
-      return array();
-   }
-   $namespaces = array();
-   foreach($field_items as $item){
-      $namespaces[] = $item['safe_value'];
-   }
-   return $namespaces;
+  if (!$field_items) {
+    return array();
+  }
+  $namespaces = array();
+  foreach ($field_items as $item) {
+    $namespaces[] = $item['safe_value'];
+  }
+  return $namespaces;
 }
 
-function url_is_management(){
-   $url_segments = explode('/', request_path());
-   if(in_array('manage', $url_segments)){
-      return true;
-   }
-   return false;
+/**
+ * 
+ * @return TRUE|FALSE
+ */
+function url_is_protected() {
+  $url_segments = explode('/', request_path());
+  if (in_array('manage', $url_segments)) {
+    return TRUE;
+  }
+  return FALSE;
 }
