@@ -4,17 +4,17 @@
  * main module files
  */
 
-define('ISLANDORA_RESTRICT_OBJECT_MANAGEMENT_FIELD_NAME', 'field_institution');
+define('ISLANDORA_NAMESPACED_OBJECT_MANAGEMENT_FIELD_NAME', 'field_institution');
 
 // Permissions.
-define('ISLANDORA_RESTRICT_OBJECT_MANAGEMENT_EXEMPT', 'object management restriction exempt');
+define('ISLANDORA_NAMESPACED_OBJECT_MANAGEMENT_EXEMPT', 'object management restriction exempt');
 
 /**
  * Implements hook_permission().
  */
-function islandora_restrict_object_management_permission() {
+function islandora_namespaced_object_management_permission() {
   return array(
-    ISLANDORA_RESTRICT_OBJECT_MANAGEMENT_EXEMPT => array(
+    ISLANDORA_NAMESPACED_OBJECT_MANAGEMENT_EXEMPT => array(
       'title' => t('object management restriction exempt'),
       'description' => t("Exemption from islandora object management restrictions."),
     ),
@@ -24,14 +24,14 @@ function islandora_restrict_object_management_permission() {
 /**
  * Implements hook_form_alter().
  */
-//function islandora_restrict_object_management_user_login(&$edit, $account) {
+//function islandora_namespaced_object_management_user_login(&$edit, $account) {
 //  $list  = get_user_whitelist($account->uid);
 //  if(!empty($list)){
 //    drupal_goto('/' . $list[0]);
 //  }
 //}
 
-function islandora_restrict_object_management_user_login_submit($form, &$form_state) {
+function islandora_namespaced_object_management_user_login_submit($form, &$form_state) {
   $list = get_user_whitelist($form_state['uid']);
   if(empty($list) && !is_array($list)){
     return;
@@ -41,8 +41,8 @@ function islandora_restrict_object_management_user_login_submit($form, &$form_st
   drupal_goto($list[0]);
 }
 
-function islandora_restrict_object_management_form_user_login_block_alter(&$form, &$form_state, $form_id) {
-  $form['#submit'][] = 'islandora_restrict_object_management_user_login_submit';
+function islandora_namespaced_object_management_form_user_login_block_alter(&$form, &$form_state, $form_id) {
+  $form['#submit'][] = 'islandora_namespaced_object_management_user_login_submit';
 }
 
 
@@ -54,7 +54,7 @@ function islandora_restrict_object_management_form_user_login_block_alter(&$form
  * @param type $user
  * @return TRUE|FALSE|NULL
  */
-function islandora_restrict_object_management_islandora_object_access($op, $object, $user) {
+function islandora_namespaced_object_management_islandora_object_access($op, $object, $user) {
   return decide_access($user, $object);
 }
 
@@ -66,7 +66,7 @@ function islandora_restrict_object_management_islandora_object_access($op, $obje
  * @param type $user
  * @return TRUE|FALSE|NULL
  */
-function islandora_restrict_object_management_islandora_datastream_access($op, $object, $user) {
+function islandora_namespaced_object_management_islandora_datastream_access($op, $object, $user) {
   return decide_access($user, $object->parent);
 }
 
@@ -80,7 +80,7 @@ function decide_access($user, $object) {
   if (!url_is_protected()) {
     return NULL;
   }
-  elseif (user_access(ISLANDORA_RESTRICT_OBJECT_MANAGEMENT_EXEMPT)) {
+  elseif (user_access(ISLANDORA_NAMESPACED_OBJECT_MANAGEMENT_EXEMPT)) {
     return TRUE;
   }
   else {
@@ -109,7 +109,7 @@ function check_user_access_for_object($user, $object) {
  */
 function get_user_whitelist($uid) {
   $account     = user_load($uid);
-  $field_name  = ISLANDORA_RESTRICT_OBJECT_MANAGEMENT_FIELD_NAME;
+  $field_name  = ISLANDORA_NAMESPACED_OBJECT_MANAGEMENT_FIELD_NAME;
   $field_items = field_get_items('user', $account, $field_name);
 
   if (!$field_items) {
