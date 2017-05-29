@@ -4,8 +4,6 @@
  * main module files
  */
 
-define('ISLANDORA_NAMESPACED_OBJECT_MANAGEMENT_FIELD_NAME', 'field_institution');
-
 // Permissions.
 define('ISLANDORA_NAMESPACED_OBJECT_MANAGEMENT_EXEMPT', 'object management restriction exempt');
 
@@ -33,11 +31,11 @@ function islandora_namespaced_object_management_permission() {
 
 function islandora_namespaced_object_management_user_login_submit($form, &$form_state) {
   $list = get_user_whitelist($form_state['uid']);
-  if(empty($list) && !is_array($list)){
+  if(empty($list) | !is_array($list)){
     return;
   }
 
-  $_GET['destination'] = $list[0];
+  $_GET['destination'] = $list[0] . '-admin';
   drupal_goto($list[0]);
 }
 
@@ -108,18 +106,8 @@ function check_user_access_for_object($user, $object) {
  * @return array
  */
 function get_user_whitelist($uid) {
-  $account     = user_load($uid);
-  $field_name  = ISLANDORA_NAMESPACED_OBJECT_MANAGEMENT_FIELD_NAME;
-  $field_items = field_get_items('user', $account, $field_name);
-
-  if (!$field_items) {
-    return array();
-  }
-  $namespaces = array();
-  foreach ($field_items as $item) {
-    $namespaces[] = $item['safe_value'];
-  }
-  return $namespaces;
+  module_load_include('.module', 'islandora_user_namespaces');
+  return get_user_namespaces($uid);
 }
 
 /**
@@ -128,6 +116,9 @@ function get_user_whitelist($uid) {
  */
 function url_is_protected() {
   $url_segments = explode('/', request_path());
+  if (in_array('islandora:root', $url_segments)) {
+    return FALSE;
+  }
   if (in_array('manage', $url_segments)) {
     return TRUE;
   }

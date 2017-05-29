@@ -3,3 +3,4 @@ description = Restricts access to Islandora object management pages based on a u
 core = 7.x
 package = Islandora Utilities
 dependencies[] = islandora
+dependencies[] = islandora_user_namespaces
