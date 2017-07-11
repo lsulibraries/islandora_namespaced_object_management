@@ -35,7 +35,7 @@ function islandora_namespaced_object_management_user_login_submit($form, &$form_
     return;
   }
 
-  $_GET['destination'] = $list[0] . '-admin';
+  $_GET['destination'] = $list[0] . '/admin';
   drupal_goto($list[0]);
 }
 
